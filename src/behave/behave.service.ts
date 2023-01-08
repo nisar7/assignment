@@ -71,13 +71,14 @@ export class BehaveService {
 
   async remove(_id: string) {
     try {
-      return await this.behaveModel.deleteOne({ _id });
+      await this.behaveModel.deleteOne({ _id });
+      return 'Record is deleted';
     } catch (error) {
       throw new InternalServerErrorException();
     }
   }
 
-  imageBuffer(name) {
+  getFile(name) {
     const filePath = `/images/${name}`;
     return readFileSync(join(process.cwd(), filePath));
   }

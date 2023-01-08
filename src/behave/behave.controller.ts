@@ -67,7 +67,7 @@ export class BehaveController {
 
   @Get('downloadFile/:name')
   downloadFile(@Res() response: Response, @Param('name') name: string) {
-    const file = this.behaveService.imageBuffer(name);
+    const file = this.behaveService.getFile(name);
     response.send(file);
   }
 }
