@@ -1,11 +1,14 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { BadRequestException } from '@nestjs/common/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { CreateBehaveDto } from './dto/create-behave.dto';
 import { UpdateBehaveDto } from './dto/update-behave.dto';
 import { Behave, BehaveDocument } from './schemas/behave.schema';
 import * as moment from 'moment';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 @Injectable()
 export class BehaveService {
@@ -24,73 +27,58 @@ export class BehaveService {
     const pageNum = page ? parseInt(page) : 0;
     const pageSizeNum = pageSize ? parseInt(pageSize) : 0;
     const queryParamReq = {
-      daily: moment(moment().toLocaleString()).toISOString(),
-      week: moment().subtract(7, 'days').toISOString(),
-      month: moment().subtract(30, 'days').toISOString(),
+      daily: moment(moment().toLocaleString()).toDate().setHours(0, 0, 0, 0),
+      week: moment().subtract(7, 'days').toDate().setHours(0, 0, 0, 0),
+      month: moment().subtract(30, 'days').toDate().setHours(0, 0, 0, 0),
     };
     if (!queryParamReq[duration])
-      throw new BadRequestException('Invalid params');
-    console.log('queryParamReq[duration]', queryParamReq);
+      throw new BadRequestException('Valid params are: daily, week, month');
 
-    return await this.behaveModel
-      .find({
-        createdAt: { $gte: queryParamReq[duration] },
-      })
-      .limit(pageSizeNum)
-      .skip(pageSizeNum * pageNum);
-
-    // if (duration === 'daily') {
-    //   const currentDate = moment(moment().format('YYYYMMDD')).toISOString();
-
-    //   return await this.behaveModel
-    //     .find({
-    //       createdAt: { $gte: currentDate },
-    //     })
-    //     .limit(pageSizeNum)
-    //     .skip(pageSizeNum * pageNum);
-    // }
-    // if (duration === 'week') {
-    //   const weekAgo = moment().subtract(7, 'days').toISOString();
-    //   return await this.behaveModel
-    //     .find({
-    //       createdAt: { $gte: weekAgo },
-    //     })
-    //     .limit(pageSizeNum)
-    //     .skip(pageSizeNum * pageNum);
-    // }
-    // if (duration === 'month') {
-    //   const monthAgo = moment().subtract(30, 'days').toISOString();
-
-    //   return await this.behaveModel
-    //     .find({
-    //       createdAt: { $gte: monthAgo },
-    //     })
-    //     .limit(pageSizeNum)
-    //     .skip(pageSizeNum * pageNum);
-    // }
-  }
-
-  async findOne(id: string) {
     try {
-      return `This action returns a #${id} behave`;
+      return await this.behaveModel
+        .find({
+          createdAt: { $gte: queryParamReq[duration] },
+        })
+        .limit(pageSizeNum)
+        .skip(pageSizeNum * pageNum);
     } catch (error) {
       throw new InternalServerErrorException();
     }
   }
 
-  async update(id: string, updateBehaveDto: UpdateBehaveDto) {
+  async findOne(_id: string) {
     try {
-      return `This action updates a #${id} behave`;
+      return await this.behaveModel.findOne({ _id });
     } catch (error) {
       throw new InternalServerErrorException();
     }
   }
 
-  remove(id: string) {
+  async update(_id: string, updateBehaveDto: UpdateBehaveDto) {
     try {
-      return `This action removes a #${id} behave`;
+      const updateRecord = await this.behaveModel.updateOne(
+        { _id },
+        updateBehaveDto,
+      );
+      if (updateRecord) {
+        return 'Record is updated';
+      }
+      return 'Some thing went wrong';
     } catch (error) {
       throw new InternalServerErrorException();
     }
+  }
+
+  async remove(_id: string) {
+    try {
+      return await this.behaveModel.deleteOne({ _id });
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  imageBuffer(name) {
+    const filePath = `/images/${name}`;
+    return readFileSync(join(process.cwd(), filePath));
   }
 }

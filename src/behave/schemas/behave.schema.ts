@@ -10,9 +10,6 @@ export class Behave {
 
   @Prop()
   points: number;
-
-  @Prop()
-  fileUrl: string;
 }
 
 export const BehaveSchema = SchemaFactory.createForClass(Behave);
